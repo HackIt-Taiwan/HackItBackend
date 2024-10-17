@@ -1,5 +1,5 @@
 FROM golang:1.22 as build
-WORKDIR /app
+WORKDIR /
 COPY . .
 RUN go build -o /server .
 
