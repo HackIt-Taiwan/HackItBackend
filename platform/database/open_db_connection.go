@@ -9,22 +9,17 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var Db *mongo.Database
+
 func Connect() (*mongo.Database, error) {
-	clientOptions := options.Client()
-	clientOptions.ApplyURI(os.Getenv("MONGO_HOST"))
-	client, err := mongo.NewClient(clientOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	var ctx = context.Background()
-
-	err = client.Connect(ctx)
+	clientOptions := options.Client().ApplyURI(os.Getenv("MONGO_HOST"))
+	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		return nil, err
 	}
 
 	fmt.Println("Connected to MongoDB!")
 
-	return client.Database(os.Getenv("MONGO_DB_NAME")), nil
+	Db = client.Database(os.Getenv("MONGO_DB_NAME"))
+	return Db, nil
 }

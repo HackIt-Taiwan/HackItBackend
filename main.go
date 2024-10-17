@@ -6,33 +6,25 @@ import (
 	"hackitbackend/pkg/middleware"
 	"hackitbackend/pkg/routes"
 	"hackitbackend/pkg/utils"
+	"hackitbackend/platform/database"
 
 	"github.com/gofiber/fiber/v2"
 
 	_ "github.com/joho/godotenv/autoload" // load .env file automatically
 )
 
-// @title API
-// @version 1.0
-// @description This is an auto-generated API Docs.
-// @termsOfService http://swagger.io/terms/
-// @contact.name API Support
-// @contact.email your@mail.com
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
-// @BasePath /api
-// @securityDefinitions.apikey ApiKeyAuth
-// @in header
-// @name Authorization
 func main() {
 	// Define Fiber config.
 
 	// Define a new Fiber app with config.
 	app := fiber.New()
+	database.Connect()
 
 	// Middlewares.
 	middleware.FiberMiddleware(app)
 
+	routes.RFIDRoutes(app)
+	routes.UserRoutes(app)
 	routes.NotFoundRoute(app)
 
 	// Start server (with or without graceful shutdown).
