@@ -52,7 +52,7 @@ func GenerateNewAccessToken(id string, credentials []string) (string, error) {
 
 	// Set public claims:
 	claims["id"] = id
-	claims["expires"] = time.Now().Add(time.Minute * time.Duration(minutesCount)).Unix()
+	claims["exp"] = time.Now().Add(time.Minute * time.Duration(minutesCount)).Unix()
 
 	// Set private token credentials:
 	for _, credential := range credentials {

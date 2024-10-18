@@ -101,6 +101,15 @@ func AssignRFIDCard(c *fiber.Ctx) error {
 		return utils.ResponseMsg(c, 401, "Invalid JWT claims", nil)
 	}
 
+	// Check if the token is expired
+	if exp, ok := claims["exp"].(float64); ok {
+		if time.Unix(int64(exp), 0).Before(time.Now()) {
+			return utils.ResponseMsg(c, 401, "JWT has expired", nil)
+		}
+	} else {
+		return utils.ResponseMsg(c, 401, "Invalid JWT expiration", nil)
+	}
+
 	userID, ok := claims["id"].(string)
 	if !ok {
 		return utils.ResponseMsg(c, 401, "Invalid user ID in JWT", nil)
