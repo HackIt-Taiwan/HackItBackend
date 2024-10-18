@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"os"
-	"time"
 
 	"hackitbackend/app/models"
 	"hackitbackend/pkg/utils"
@@ -55,15 +54,14 @@ func VerifyUser(c *fiber.Ctx) error {
 		return utils.ResponseMsg(c, 401, "Invalid verification code", nil)
 	}
 
-	// Verification success
-	user.IsVerified = true
-	user.UpdatedAt = time.Now()
-
-	// Update user status
-	_, err = database.Db.Collection("users").UpdateOne(ctx, bson.M{"id": user.ID}, bson.M{"$set": user})
+	accessToken, err := utils.GenerateNewAccessToken(user.ID, []string{})
 	if err != nil {
-		return utils.ResponseMsg(c, 500, "Failed to update user status", err.Error())
+		return utils.ResponseMsg(c, 500, "Failed to generate access token", nil)
 	}
 
-	return utils.ResponseMsg(c, 200, "User verified successfully", user)
+	jwtResponse := models.VerificationSession{
+		UserID:    user.ID,
+		Jwt:       accessToken,
+	}
+	return utils.ResponseMsg(c, 200, "User verified successfully", jwtResponse)
 }

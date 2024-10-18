@@ -44,7 +44,6 @@ func CreateUsers(c *fiber.Ctx) error {
 	users.CreatedAt = time.Now()
 	users.UpdatedAt = time.Now()
 	users.VerificationCode = utils.GenerateVerificationCode()
-	users.IsVerified = false
 
 	_, err := database.Db.Collection("users").InsertOne(ctx, users)
 	if err != nil {
