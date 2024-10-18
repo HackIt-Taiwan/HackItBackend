@@ -119,16 +119,13 @@ func AssignRFIDCard(c *fiber.Ctx) error {
 		return utils.ResponseMsg(c, 500, "Failed to check if user exists", nil)
 	}
 
-	// Check if the card already exists in the database
+	// Check if the card is already assigned to the user
 	var existingCard models.RFIDCard
-	err = database.Db.Collection("rfid_cards").FindOne(ctx, bson.M{"card_number": request.CardNumber}).Decode(&existingCard)
-	if err == nil {
-		return utils.ResponseMsg(c, 400, "Card is already assigned to another user", nil)
-	} else if err != mongo.ErrNoDocuments {
-		return utils.ResponseMsg(c, 500, "Failed to check if card exists", nil)
+	err = database.Db.Collection("rfid_cards").FindOne(ctx, bson.M{"user_id": userID}).Decode(&existingCard)
+	if err != nil && err != mongo.ErrNoDocuments {
+		return utils.ResponseMsg(c, 500, "Failed to check if card exists for user", nil)
 	}
 
-	// Create new RFID card record
 	rfidCard := models.RFIDCard{
 		UserID:     userID,
 		CardNumber: request.CardNumber,
@@ -136,12 +133,27 @@ func AssignRFIDCard(c *fiber.Ctx) error {
 		UpdatedAt:  time.Now(),
 	}
 
-	// Insert new card info into database
-	_, err = database.Db.Collection("rfid_cards").InsertOne(ctx, rfidCard)
-	if err != nil {
-		return utils.ResponseMsg(c, 500, "Failed to assign RFID card to user", nil)
+	if err == nil {
+		// Card is already assigned to this user, update the existing record
+		_, err = database.Db.Collection("rfid_cards").UpdateOne(
+			ctx,
+			bson.M{"user_id": userID},
+			bson.M{"$set": bson.M{
+				"card_number": request.CardNumber,
+				"updated_at":  time.Now(),
+			}},
+		)
+		if err != nil {
+			return utils.ResponseMsg(c, 500, "Failed to update RFID card for user", nil)
+		}
+	} else {
+		// Card is not assigned to this user, insert new record
+		_, err = database.Db.Collection("rfid_cards").InsertOne(ctx, rfidCard)
+		if err != nil {
+			return utils.ResponseMsg(c, 500, "Failed to assign RFID card to user", nil)
+		}
 	}
 
 	// Return success message
-	return utils.ResponseMsg(c, 200, "RFID card assigned successfully", nil)
+	return utils.ResponseMsg(c, 200, "RFID card assigned or updated successfully", nil)
 }
