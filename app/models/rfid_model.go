@@ -3,7 +3,7 @@ package models
 import "time"
 
 type VerificationRequest struct {
-	UserID     string `json:"id" bson:"id"`
+	UserID     string `json:"user_id" bson:"user_id"`
 	UserNumber string `json:"user_number" bson:"user_number"`
 	Secret     string `json:"secret" bson:"secret"`
 	ValidCode  string `json:"valid_code" bson:"valid_code"`

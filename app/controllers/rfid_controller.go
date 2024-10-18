@@ -12,7 +12,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 func VerifyUser(c *fiber.Ctx) error {
@@ -88,17 +87,10 @@ func AssignRFIDCard(c *fiber.Ctx) error {
 		return utils.ResponseMsg(c, 400, "CardNumber and JWT are required", nil)
 	}
 
-	// Verify JWT token
-	token, err := jwt.Parse(request.JWT, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("JWT_SECRET_KEY")), nil
-	})
+	// Parse JWT to claims
+	claims, err := utils.ParseJWTToClaims(request.JWT)
 	if err != nil {
-		return utils.ResponseMsg(c, 401, "Invalid JWT", nil)
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || !token.Valid {
-		return utils.ResponseMsg(c, 401, "Invalid JWT claims", nil)
+		return utils.ResponseMsg(c, 401, err.Error(), nil)
 	}
 
 	// Check if the token is expired
