@@ -84,7 +84,7 @@ func AssignRFIDCard(c *fiber.Ctx) error {
 
 	// Check if CardNumber or JWT is empty
 	if request.CardNumber == "" || request.JWT == "" {
-		return utils.ResponseMsg(c, 400, "CardNumber and JWT are required", nil)
+		return utils.ResponseMsg(c, 400, "card_number and JWT are required", nil)
 	}
 
 	// Parse JWT to claims
