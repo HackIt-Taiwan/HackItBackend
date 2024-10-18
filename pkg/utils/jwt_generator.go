@@ -60,7 +60,7 @@ func GenerateNewAccessToken(id string, credentials []string) (string, error) {
 	}
 
 	// Create a new JWT access token with claims.
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
 
 	// Generate token.
 	t, err := token.SignedString([]byte(secret))

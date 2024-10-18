@@ -11,4 +11,5 @@ func RFIDRoutes(app *fiber.App) {
 	userGroup := app.Group("/rfid")
 
 	userGroup.Get("/userVerification", controllers.VerifyUser)
+	userGroup.Post("/assignRFIDCard", controllers.AssignRFIDCard)
 }
