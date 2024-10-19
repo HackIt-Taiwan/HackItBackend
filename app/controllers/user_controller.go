@@ -43,9 +43,13 @@ func CreateUsers(c *fiber.Ctx) error {
 
 	users.CreatedAt = time.Now()
 	users.UpdatedAt = time.Now()
-	users.VerificationCode = utils.GenerateVerificationCode()
+	var err error
+	users.VerificationCode, err = utils.GenerateVerificationCode()
+	if err != nil {
+		return utils.ResponseMsg(c, 500, "Failed to generate verification code", err.Error())
+	}
 
-	_, err := database.Db.Collection("users").InsertOne(ctx, users)
+	_, err = database.Db.Collection("users").InsertOne(ctx, users)
 	if err != nil {
 		return utils.ResponseMsg(c, 500, "Failed to insert data", err.Error())
 	}

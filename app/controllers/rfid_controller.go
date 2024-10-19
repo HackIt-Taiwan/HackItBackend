@@ -123,7 +123,7 @@ func AssignRFIDCard(c *fiber.Ctx) error {
 	// Check if the card is already assigned to the user
 	var existingCard models.RFIDCard
 	err = database.Db.Collection("rfid_cards").FindOne(ctx, bson.M{"user_id": userID}).Decode(&existingCard)
-	if err != nil && err != mongo.ErrNoDocuments {
+	if err != nil && err != mongo.ErrNoDocuments { 
 		return utils.ResponseMsg(c, 500, "Failed to check if card exists for user", nil)
 	}
 
