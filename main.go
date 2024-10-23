@@ -15,8 +15,6 @@ import (
 
 func main() {
 	// Define Fiber config.
-
-	// Define a new Fiber app with config.
 	app := fiber.New()
 	database.Connect()
 
