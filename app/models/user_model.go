@@ -27,6 +27,7 @@ type Users struct {
 	Email             string             `json:"email,omitempty" bson:"email,omitempty"`
 	Phone             string             `json:"phone,omitempty" bson:"phone,omitempty"`
 	EmergencyContacts []EmergencyContact `json:"emergencyContacts,omitempty" bson:"emergencyContacts,omitempty"`
+	TShirtSize        string             `json:"tShirtSize,omitempty" bson:"tShirtSize,omitempty"`
 	Allergies         string             `json:"allergies,omitempty" bson:"allergies,omitempty"`
 	SpecialDiseases   string             `json:"specialDiseases,omitempty" bson:"specialDiseases,omitempty"`
 	Remarks           string             `json:"remarks,omitempty" bson:"remarks,omitempty"`
