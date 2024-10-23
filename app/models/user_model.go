@@ -63,3 +63,8 @@ type UserVerification struct {
 	UserID string `json:"user_id" bson:"user_id"`
 	Secret string `json:"secret" bson:"secret"`
 }
+
+type EditSecret struct {
+	TeamID string `json:"team_id" bson:"team_id"`
+	Secret string `json:"secret" bson:"secret"`
+}

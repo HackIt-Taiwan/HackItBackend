@@ -16,6 +16,7 @@ import (
 func main() {
 	// Define Fiber config.
 	app := fiber.New()
+	utils.InitEmailClient()
 	database.Connect()
 
 	// Middlewares.

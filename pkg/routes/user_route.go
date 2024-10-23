@@ -12,5 +12,9 @@ func UserRoutes(app *fiber.App) {
 
 	userGroup.Post("/create", controllers.CreateUsers)
 	userGroup.Post("/team/create", controllers.CreateTeam)
+	userGroup.Post("/team/update/:secret", controllers.UpdateTeamInformation)
+
+	userGroup.Get("/team/edit/:secret", controllers.GetFormInformation)
+
 	userGroup.Get("/verification/:secret", controllers.Verification)
 }
