@@ -93,11 +93,6 @@ func CreateTeam(c *fiber.Ctx) error {
 			break
 		}
 	}
-	if haveRepresentative != 1 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "There must be one and only one representative",
-		})
-	}
 
 	// if len(formData.TeamMembers) < 3 || len(formData.TeamMembers) > 6 {
 	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
