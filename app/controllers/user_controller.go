@@ -86,6 +86,24 @@ func CreateTeam(c *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
+	haveRepresentative := 0
+	for _, member := range formData.TeamMembers {
+		if member.IsRepresentative {
+			haveRepresentative++
+			break
+		}
+	}
+	if haveRepresentative != 1 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "There must be one and only one representative",
+		})
+	}
+
+	// if len(formData.TeamMembers) < 3 || len(formData.TeamMembers) > 6 {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"error": "The number of team members must be between 3 and 6",
+	// 	})
+	// }
 
 	// 將 TeamMember、AccompanyingPerson 和 Exhibitor 實例插入資料庫並獲取其 UUID
 	var teamMemberIDs []string
@@ -267,8 +285,12 @@ func Verification(c *fiber.Ctx) error {
 	}
 
 	// 根據找到的 userID 更新使用者的驗證狀態
+	userNumber, err := utils.GetNextUserID(c.Context(), "user_number")
+	if err != nil {
+		return utils.ResponseMsg(c, 500, "Failed to get next user number", err.Error())
+	}
 	filter := bson.M{"id": userVerification.UserID}
-	update := bson.M{"$set": bson.M{"verified": true}}
+	update := bson.M{"$set": bson.M{"verified": true, "userNumber": userNumber}}
 	_, err = database.Db.Collection("users").UpdateOne(c.Context(), filter, update)
 	if err != nil {
 		return utils.ResponseMsg(c, 500, "Failed to update user verification status", err.Error())
