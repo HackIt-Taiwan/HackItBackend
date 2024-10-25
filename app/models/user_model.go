@@ -23,7 +23,9 @@ type Users struct {
 	School            string             `json:"school,omitempty" bson:"school,omitempty"`
 	Grade             string             `json:"grade,omitempty" bson:"grade,omitempty"`
 	IdentityNumber    string             `json:"identityNumber,omitempty" bson:"identityNumber,omitempty"`
-	UserNumber        int             `json:"userNumber,omitempty" bson:"userNumber,omitempty"`
+	StudentCardFront  string             `json:"studentCardFront,omitempty" bson:"studentCardFront,omitempty"`
+	StudentCardBack   string             `json:"studentCardBack,omitempty" bson:"studentCardBack,omitempty"`
+	UserNumber        int                `json:"userNumber,omitempty" bson:"userNumber,omitempty"`
 	Birthday          string             `json:"birthday,omitempty" bson:"birthday,omitempty"`
 	Email             string             `json:"email,omitempty" bson:"email,omitempty"`
 	Phone             string             `json:"phone,omitempty" bson:"phone,omitempty"`

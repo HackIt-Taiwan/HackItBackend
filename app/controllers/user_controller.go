@@ -3,9 +3,11 @@ package controllers
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"html/template"
 	"os"
+	"strings"
 	"time"
 
 	"hackitbackend/app/models"
@@ -63,6 +65,25 @@ func CreateUsers(c *fiber.Ctx) error {
 	return utils.ResponseMsg(c, 200, "User created successfully. Check email for verification code.", users)
 }
 
+func checkBase64Size(base64Str string, maxSize int) error {
+	// 获取 Base64 字符串长度
+	base64Length := len(base64Str)
+
+	// 计算原始数据大小
+	originalSize := (base64Length * 3) / 4
+
+	// 减去填充字符的影响
+	padding := strings.Count(base64Str, "=")
+	originalSize -= padding
+
+	// 检查是否超过最大大小
+	if originalSize > maxSize {
+		return errors.New("file size exceeds limit")
+	}
+
+	return nil
+}
+
 func CreateTeam(c *fiber.Ctx) error {
 	validate := validator.New()
 
@@ -93,6 +114,27 @@ func CreateTeam(c *fiber.Ctx) error {
 			break
 		}
 	}
+
+	const maxFileSize = 10000000 // 10 MB
+
+	for _, member := range formData.TeamMembers {
+		// 检查学生证前面的 Base64 字符串大小
+		fmt.Println(member.StudentCardFront)
+		if err := checkBase64Size(member.StudentCardFront, maxFileSize); err != nil {
+			fmt.Println(err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Student card front is too large",
+			})
+		}
+
+		// 检查学生证后面的 Base64 字符串大小
+		if err := checkBase64Size(member.StudentCardBack, maxFileSize); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Student card back is too large",
+			})
+		}
+	}
+
 
 	// if len(formData.TeamMembers) < 3 || len(formData.TeamMembers) > 6 {
 	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
