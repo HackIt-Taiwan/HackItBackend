@@ -29,6 +29,7 @@ func CreateUsers(c *fiber.Ctx) error {
 	users := new(models.Users)
 
 	if err := c.BodyParser(users); err != nil {
+		fmt.Println(err.Error())
 		return utils.ResponseMsg(c, 400, err.Error(), nil)
 	}
 
@@ -44,6 +45,7 @@ func CreateUsers(c *fiber.Ctx) error {
 			// UUID doesn't exist, we can use it
 			break
 		} else if err != nil {
+			fmt.Println(err.Error())
 			// An error occurred during the database query
 			return utils.ResponseMsg(c, 500, "Error checking user ID", err.Error())
 		}
@@ -57,6 +59,7 @@ func CreateUsers(c *fiber.Ctx) error {
 
 	_, err = database.Db.Collection("users").InsertOne(ctx, users)
 	if err != nil {
+		fmt.Println(err.Error())
 		return utils.ResponseMsg(c, 500, "Failed to insert data", err.Error())
 	}
 
@@ -96,6 +99,7 @@ func CreateTeam(c *fiber.Ctx) error {
 
 	// 解析請求的 JSON 數據
 	if err := c.BodyParser(formData); err != nil {
+		fmt.Println(err.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid input",
 		})
@@ -103,6 +107,7 @@ func CreateTeam(c *fiber.Ctx) error {
 
 	// 驗證數據
 	if err := validate.Struct(formData); err != nil {
+		fmt.Println(err.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -121,7 +126,7 @@ func CreateTeam(c *fiber.Ctx) error {
 		// 检查学生证前面的 Base64 字符串大小
 		fmt.Println(member.StudentCardFront)
 		if err := checkBase64Size(member.StudentCardFront, maxFileSize); err != nil {
-			fmt.Println(err)
+			fmt.Println(err.Error())
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "Student card front is too large",
 			})
@@ -134,7 +139,6 @@ func CreateTeam(c *fiber.Ctx) error {
 			})
 		}
 	}
-
 
 	// if len(formData.TeamMembers) < 3 || len(formData.TeamMembers) > 6 {
 	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -160,6 +164,7 @@ func CreateTeam(c *fiber.Ctx) error {
 		// 生成128字元的隨機字符串
 		randomStr, err := utils.GenerateRandomString(128)
 		if err != nil {
+			fmt.Println(err.Error())
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to generate random string",
 			})
@@ -172,6 +177,7 @@ func CreateTeam(c *fiber.Ctx) error {
 		}
 		_, err = database.Db.Collection("user_verifications_secret").InsertOne(c.Context(), userVerification)
 		if err != nil {
+			fmt.Println(err.Error())
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to save random string for user",
 			})
@@ -183,6 +189,7 @@ func CreateTeam(c *fiber.Ctx) error {
 		// 插入 team member
 		_, err = database.Db.Collection("users").InsertOne(c.Context(), member)
 		if err != nil {
+			fmt.Println(err.Error())
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to create team member",
 			})
@@ -204,6 +211,7 @@ func CreateTeam(c *fiber.Ctx) error {
 			}
 			_, err = database.Db.Collection("edit_secrets").InsertOne(c.Context(), editSecret)
 			if err != nil {
+				fmt.Println(err.Error())
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"error": "Failed to create edit secret",
 				})
@@ -213,6 +221,7 @@ func CreateTeam(c *fiber.Ctx) error {
 
 			t, err := template.New("edit_form").Parse(htmlTempalte.TeamLeaderEditTemplate)
 			if err != nil {
+				fmt.Println(err.Error())
 				return fmt.Errorf("failed to parse email template: %w", err)
 			}
 
@@ -223,12 +232,14 @@ func CreateTeam(c *fiber.Ctx) error {
 			}
 
 			if err := t.Execute(&body, EmailData{Name: member.Name, EditLink: teamLeaderEditLink}); err != nil {
+				fmt.Println(err.Error())
 				return fmt.Errorf("failed to execute email template: %w", err)
 			}
 
 			// 發送編輯郵件
 			err = utils.SendEmail(member.Email, "[Hackit] 對表單進行編輯", body.String())
 			if err != nil {
+				fmt.Println(err.Error())
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"error": fmt.Sprintf("Failed to send email to %s: %v", member.Email, err),
 				})
@@ -237,6 +248,7 @@ func CreateTeam(c *fiber.Ctx) error {
 
 		t, err := template.New("email_verification").Parse(htmlTempalte.VerificationTemplate)
 		if err != nil {
+			fmt.Println(err.Error())
 			return fmt.Errorf("failed to parse email template: %w", err)
 		}
 
@@ -247,12 +259,14 @@ func CreateTeam(c *fiber.Ctx) error {
 		}
 
 		if err := t.Execute(&body, EmailData{Name: member.Name, VerificationLink: verificationURL}); err != nil {
+			fmt.Println(err.Error())
 			return fmt.Errorf("failed to execute email template: %w", err)
 		}
 
 		// 發送驗證郵件
 		err = utils.SendEmail(member.Email, "[Hackit] 驗證您的郵件", body.String())
 		if err != nil {
+			fmt.Println(err.Error())
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": fmt.Sprintf("Failed to send email to %s: %v", member.Email, err),
 			})
@@ -264,6 +278,7 @@ func CreateTeam(c *fiber.Ctx) error {
 		person.ID = uuid.New().String()
 		_, err := database.Db.Collection("accompanying_persons").InsertOne(c.Context(), person)
 		if err != nil {
+			fmt.Println(err.Error())
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to create accompanying person",
 			})
@@ -276,6 +291,7 @@ func CreateTeam(c *fiber.Ctx) error {
 		exhibitor.ID = uuid.New().String()
 		_, err := database.Db.Collection("exhibitors").InsertOne(c.Context(), exhibitor)
 		if err != nil {
+			fmt.Println(err.Error())
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to create exhibitor",
 			})
@@ -298,6 +314,7 @@ func CreateTeam(c *fiber.Ctx) error {
 	collection := database.Db.Collection("teams")
 	_, err := collection.InsertOne(c.Context(), team)
 	if err != nil {
+		fmt.Println(err.Error())
 		return utils.ResponseMsg(c, 500, "Failed to create team", err.Error())
 	}
 
@@ -315,6 +332,7 @@ func Verification(c *fiber.Ctx) error {
 	var userVerification models.UserVerification
 	err := database.Db.Collection("user_verifications_secret").FindOne(c.Context(), bson.M{"secret": secret}).Decode(&userVerification)
 	if err != nil {
+		fmt.Println(err.Error())
 		if err == mongo.ErrNoDocuments {
 			return utils.ResponseMsg(c, 404, "Verification link is invalid or has expired", nil)
 		}
@@ -324,17 +342,20 @@ func Verification(c *fiber.Ctx) error {
 	// 根據找到的 userID 更新使用者的驗證狀態
 	userNumber, err := utils.GetNextUserID(c.Context(), "user_number")
 	if err != nil {
+		fmt.Println(err.Error())
 		return utils.ResponseMsg(c, 500, "Failed to get next user number", err.Error())
 	}
 	filter := bson.M{"id": userVerification.UserID}
 	update := bson.M{"$set": bson.M{"verified": true, "userNumber": userNumber}}
 	_, err = database.Db.Collection("users").UpdateOne(c.Context(), filter, update)
 	if err != nil {
+		fmt.Println(err.Error())
 		return utils.ResponseMsg(c, 500, "Failed to update user verification status", err.Error())
 	}
 
 	_, err = database.Db.Collection("user_verifications_secret").DeleteOne(c.Context(), bson.M{"secret": secret})
 	if err != nil {
+		fmt.Println(err.Error())
 		return utils.ResponseMsg(c, 500, "Failed to delete verification token", err.Error())
 	}
 
@@ -348,6 +369,7 @@ func GetFormInformation(c *fiber.Ctx) error {
 	var editSecret models.EditSecret
 	err := database.Db.Collection("edit_secrets").FindOne(c.Context(), bson.M{"secret": secret}).Decode(&editSecret)
 	if err != nil {
+		fmt.Println(err.Error())
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Invalid secret",
 		})
@@ -357,6 +379,7 @@ func GetFormInformation(c *fiber.Ctx) error {
 	var team models.Team
 	err = database.Db.Collection("teams").FindOne(c.Context(), bson.M{"id": editSecret.TeamID}).Decode(&team)
 	if err != nil {
+		fmt.Println(err.Error())
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Team not found",
 		})
@@ -366,11 +389,13 @@ func GetFormInformation(c *fiber.Ctx) error {
 	var teamMembers []models.Users
 	cursor, err := database.Db.Collection("users").Find(c.Context(), bson.M{"id": bson.M{"$in": team.TeamMembers}})
 	if err != nil {
+		fmt.Println(err.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve team members",
 		})
 	}
 	if err := cursor.All(c.Context(), &teamMembers); err != nil {
+		fmt.Println(err.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to decode team members",
 		})
@@ -381,11 +406,13 @@ func GetFormInformation(c *fiber.Ctx) error {
 	if len(team.AccompanyingPersons) > 0 {
 		cursor, err := database.Db.Collection("accompanying_persons").Find(c.Context(), bson.M{"id": bson.M{"$in": team.AccompanyingPersons}})
 		if err != nil {
+			fmt.Println(err.Error())
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to retrieve accompanying persons",
 			})
 		}
 		if err := cursor.All(c.Context(), &accompanyingPersons); err != nil {
+			fmt.Println(err.Error())
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to decode accompanying persons",
 			})
@@ -397,11 +424,13 @@ func GetFormInformation(c *fiber.Ctx) error {
 	if len(team.Exhibitors) > 0 {
 		cursor, err := database.Db.Collection("exhibitors").Find(c.Context(), bson.M{"id": bson.M{"$in": team.Exhibitors}})
 		if err != nil {
+			fmt.Println(err.Error())
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to retrieve exhibitors",
 			})
 		}
 		if err := cursor.All(c.Context(), &exhibitors); err != nil {
+			fmt.Println(err.Error())
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to decode exhibitors",
 			})
@@ -430,6 +459,7 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 	var editSecret models.EditSecret
 	err := database.Db.Collection("edit_secrets").FindOne(c.Context(), bson.M{"secret": secret}).Decode(&editSecret)
 	if err != nil {
+		fmt.Println(err.Error())
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Team not found or invalid secret",
 		})
@@ -445,6 +475,7 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 
 	// 解析請求的 JSON 數據
 	if err := c.BodyParser(formData); err != nil {
+		fmt.Println(err.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid input",
 		})
@@ -452,6 +483,7 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 
 	// 驗證數據
 	if err := validate.Struct(formData); err != nil {
+		fmt.Println(err.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -467,19 +499,21 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 	).Decode(&teamData)
 
 	if err != nil {
+		fmt.Println(err.Error())
 		return utils.ResponseMsg(c, 500, "Failed to update team information", err.Error())
 	}
 
 	if len(teamData.TeamMembers) != len(formData.TeamMembers) {
 		return utils.ResponseMsg(c, 400, "You can't change the number of team members", nil)
 	}
-	
+
 	tempTeamMembers := []string{}
 	// 更新團隊成員
 	for i, memberID := range teamData.TeamMembers {
 		var member models.Users
 		err := database.Db.Collection("users").FindOne(c.Context(), bson.M{"id": memberID}).Decode(&member)
 		if err != nil {
+			fmt.Println(err.Error())
 			return utils.ResponseMsg(c, 500, "Failed to retrieve team member", err.Error())
 		}
 		member.UpdatedAt = time.Now()
@@ -488,6 +522,7 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 		if member.Email != "" && member.Email != formData.TeamMembers[i].Email {
 			randomStr, err := utils.GenerateRandomString(128)
 			if err != nil {
+				fmt.Println(err.Error())
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"error": "Failed to generate random string",
 				})
@@ -499,6 +534,7 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 			}
 			_, err = database.Db.Collection("user_verifications_secret").InsertOne(c.Context(), userVerification)
 			if err != nil {
+				fmt.Println(err.Error())
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"error": "Failed to save random string for user",
 				})
@@ -510,12 +546,14 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 			// 更新用戶資料
 			_, err = database.Db.Collection("users").UpdateOne(c.Context(), bson.M{"id": memberID}, bson.M{"$set": formData.TeamMembers[i]})
 			if err != nil {
+				fmt.Println(err.Error())
 				return utils.ResponseMsg(c, 500, "Failed to update team member", err.Error())
 			}
 
 			// 發送驗證郵件
 			t, err := template.New("email_verification").Parse(htmlTempalte.VerificationTemplate)
 			if err != nil {
+				fmt.Println(err.Error())
 				return utils.ResponseMsg(c, 500, "Failed to parse email template", err.Error())
 			}
 
@@ -526,17 +564,20 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 			}
 
 			if err := t.Execute(&body, EmailData{Name: member.Name, VerificationLink: verificationURL}); err != nil {
+				fmt.Println(err.Error())
 				return utils.ResponseMsg(c, 500, "Failed to execute email template", err.Error())
 			}
 
 			err = utils.SendEmail(member.Email, "[Hackit] 驗證您的郵件", body.String())
 			if err != nil {
+				fmt.Println(err.Error())
 				return utils.ResponseMsg(c, 500, fmt.Sprintf("Failed to send email to %s", member.Email), err.Error())
 			}
 		} else {
 			// 如果 email 沒有變更，直接更新其他資料
 			_, err = database.Db.Collection("users").UpdateOne(c.Context(), bson.M{"id": member.ID}, bson.M{"$set": formData.TeamMembers[i]})
 			if err != nil {
+				fmt.Println(err.Error())
 				return utils.ResponseMsg(c, 500, "Failed to update team member", err.Error())
 			}
 		}
@@ -545,7 +586,7 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 	teamData.TeamMembers = tempTeamMembers
 
 	teamData.AccompanyingPersons = []string{}
-	
+
 	// 更新陪同人員
 	for _, person := range formData.AccompanyingPersons {
 		if person.ID == "" {
@@ -553,16 +594,17 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 		}
 		_, err := database.Db.Collection("accompanying_persons").UpdateOne(
 			c.Context(),
-			bson.M{"id": person.ID},               // 根據 ID 查找
-			bson.M{"$set": person},                // 更新或插入 person 資料
-			options.Update().SetUpsert(true),      // 設置 upsert 為 true
+			bson.M{"id": person.ID},          // 根據 ID 查找
+			bson.M{"$set": person},           // 更新或插入 person 資料
+			options.Update().SetUpsert(true), // 設置 upsert 為 true
 		)
 		if err != nil {
+			fmt.Println(err.Error())
 			return utils.ResponseMsg(c, 500, "Failed to update accompanying person", err.Error())
 		}
 		teamData.AccompanyingPersons = append(teamData.AccompanyingPersons, person.ID)
 	}
-	
+
 	teamData.Exhibitors = []string{}
 	// 更新參展人
 	for _, exhibitor := range formData.Exhibitors {
@@ -572,11 +614,12 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 		}
 		_, err := database.Db.Collection("exhibitors").UpdateOne(
 			c.Context(),
-			bson.M{"id": exhibitor.ID},             // 根據 ID 進行查找
-			bson.M{"$set": exhibitor},              // 更新或插入 exhibitor 資料
-			options.Update().SetUpsert(true),       // 設置 upsert 為 true
+			bson.M{"id": exhibitor.ID},       // 根據 ID 進行查找
+			bson.M{"$set": exhibitor},        // 更新或插入 exhibitor 資料
+			options.Update().SetUpsert(true), // 設置 upsert 為 true
 		)
 		if err != nil {
+			fmt.Println(err.Error())
 			return utils.ResponseMsg(c, 500, "Failed to update exhibitor", err.Error())
 		}
 		teamData.Exhibitors = append(teamData.Exhibitors, exhibitor.ID)
@@ -590,6 +633,7 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 		bson.M{"$set": teamData},
 	).Decode(&teamData)
 	if err != nil {
+		fmt.Println(err.Error())
 		return utils.ResponseMsg(c, 500, "Failed to update team information", err.Error())
 	}
 
