@@ -42,7 +42,6 @@ type Users struct {
 
 // EmergencyContact 模型
 type EmergencyContact struct {
-	ID           string `json:"id,omitempty" bson:"id,omitempty"` // 使用 id 作為 BSON 標記
 	Name         string `json:"name,omitempty" bson:"name,omitempty"`
 	Relationship string `json:"relationship,omitempty" bson:"relationship,omitempty"`
 	Phone        string `json:"phone,omitempty" bson:"phone,omitempty"`

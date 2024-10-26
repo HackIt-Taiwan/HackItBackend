@@ -88,6 +88,7 @@ func checkBase64Size(base64Str string, maxSize int) error {
 }
 
 func CreateTeam(c *fiber.Ctx) error {
+	encryptionKey := os.Getenv("ENCRYPTION_KEY")
 	validate := validator.New()
 
 	formData := new(struct {
@@ -123,8 +124,6 @@ func CreateTeam(c *fiber.Ctx) error {
 	const maxFileSize = 10000000 // 10 MB
 
 	for _, member := range formData.TeamMembers {
-		// 检查学生证前面的 Base64 字符串大小
-		fmt.Println(member.StudentCardFront)
 		if err := checkBase64Size(member.StudentCardFront, maxFileSize); err != nil {
 			fmt.Println(err.Error())
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -150,6 +149,7 @@ func CreateTeam(c *fiber.Ctx) error {
 	var teamMemberIDs []string
 	teamID := uuid.New().String()
 	for i, member := range formData.TeamMembers {
+		username := member.Name
 		if i == 0 {
 			member.IsRepresentative = true
 		} else {
@@ -186,6 +186,37 @@ func CreateTeam(c *fiber.Ctx) error {
 		baseURL := os.Getenv("BASE_URL") + "/users/verification/"
 		verificationURL := fmt.Sprintf("%s%s", baseURL, randomStr)
 
+		for i, contact := range member.EmergencyContacts {
+			encryptedPhone := utils.EncryptAES(contact.Phone, encryptionKey)
+			member.EmergencyContacts[i].Phone = encryptedPhone
+			encryptedRelationship := utils.EncryptAES(contact.Relationship, encryptionKey)
+			member.EmergencyContacts[i].Relationship = encryptedRelationship
+			encryptedName := utils.EncryptAES(contact.Name, encryptionKey)
+			member.EmergencyContacts[i].Name = encryptedName
+		}
+		encryptedStudentCardFront := utils.EncryptAES(member.StudentCardFront, encryptionKey)
+		member.StudentCardFront = encryptedStudentCardFront
+			
+		encryptedStudentCardBack := utils.EncryptAES(member.StudentCardBack, encryptionKey)
+		member.StudentCardBack = encryptedStudentCardBack
+
+		phone := utils.EncryptAES(member.Phone, encryptionKey)
+		member.Phone = phone
+		birthday := utils.EncryptAES(member.Birthday, encryptionKey)
+		member.Birthday = birthday
+		identityNumber := utils.EncryptAES(member.IdentityNumber, encryptionKey)
+		member.IdentityNumber = identityNumber
+
+		school := utils.EncryptAES(member.School, encryptionKey)
+		member.School = school
+		name := utils.EncryptAES(member.Name, encryptionKey)
+		member.Name = name
+		remarks := utils.EncryptAES(member.Remarks, encryptionKey)
+		member.Remarks = remarks
+		specialDiseases := utils.EncryptAES(member.SpecialDiseases, encryptionKey)
+		member.SpecialDiseases = specialDiseases
+		allergies := utils.EncryptAES(member.Allergies, encryptionKey)
+		member.Allergies = allergies
 		// 插入 team member
 		_, err = database.Db.Collection("users").InsertOne(c.Context(), member)
 		if err != nil {
@@ -231,7 +262,7 @@ func CreateTeam(c *fiber.Ctx) error {
 				EditLink string
 			}
 
-			if err := t.Execute(&body, EmailData{Name: member.Name, EditLink: teamLeaderEditLink}); err != nil {
+			if err := t.Execute(&body, EmailData{Name: username, EditLink: teamLeaderEditLink}); err != nil {
 				fmt.Println(err.Error())
 				return fmt.Errorf("failed to execute email template: %w", err)
 			}
@@ -258,7 +289,7 @@ func CreateTeam(c *fiber.Ctx) error {
 			VerificationLink string
 		}
 
-		if err := t.Execute(&body, EmailData{Name: member.Name, VerificationLink: verificationURL}); err != nil {
+		if err := t.Execute(&body, EmailData{Name: username, VerificationLink: verificationURL}); err != nil {
 			fmt.Println(err.Error())
 			return fmt.Errorf("failed to execute email template: %w", err)
 		}
@@ -276,6 +307,8 @@ func CreateTeam(c *fiber.Ctx) error {
 	var accompanyingPersonIDs []string
 	for _, person := range formData.AccompanyingPersons {
 		person.ID = uuid.New().String()
+		encryptedPhone := utils.EncryptAES(person.Phone, encryptionKey)
+		person.Phone = encryptedPhone
 		_, err := database.Db.Collection("accompanying_persons").InsertOne(c.Context(), person)
 		if err != nil {
 			fmt.Println(err.Error())
@@ -364,6 +397,7 @@ func Verification(c *fiber.Ctx) error {
 
 func GetFormInformation(c *fiber.Ctx) error {
 	secret := c.Params("secret")
+	encryptionKey := os.Getenv("ENCRYPTION_KEY")
 
 	// 根據 secret 查詢 edit_secrets 集合
 	var editSecret models.EditSecret
@@ -437,6 +471,46 @@ func GetFormInformation(c *fiber.Ctx) error {
 		}
 	}
 
+
+	for i, member := range teamMembers {
+		for j, contact := range member.EmergencyContacts {
+			encryptedPhone := utils.Decrypt(contact.Phone, encryptionKey)
+			teamMembers[i].EmergencyContacts[j].Phone = encryptedPhone
+			encryptedRelationship := utils.Decrypt(contact.Relationship, encryptionKey)
+			teamMembers[i].EmergencyContacts[j].Relationship = encryptedRelationship
+			encryptedName := utils.Decrypt(contact.Name, encryptionKey)
+			teamMembers[i].EmergencyContacts[j].Name = encryptedName
+		}
+		encryptedStudentCardFront := utils.Decrypt(member.StudentCardFront, encryptionKey)
+		teamMembers[i].StudentCardFront = encryptedStudentCardFront
+
+		encryptedStudentCardBack := utils.Decrypt(member.StudentCardBack, encryptionKey)
+		teamMembers[i].StudentCardBack = encryptedStudentCardBack
+
+		phone := utils.Decrypt(member.Phone, encryptionKey)
+		teamMembers[i].Phone = phone
+		birthday := utils.Decrypt(member.Birthday, encryptionKey)
+		teamMembers[i].Birthday = birthday
+		identityNumber := utils.Decrypt(member.IdentityNumber, encryptionKey)
+		teamMembers[i].IdentityNumber = identityNumber
+
+		school := utils.Decrypt(member.School, encryptionKey)
+		teamMembers[i].School = school
+		name := utils.Decrypt(member.Name, encryptionKey)
+		teamMembers[i].Name = name
+		remarks := utils.Decrypt(member.Remarks, encryptionKey)
+		teamMembers[i].Remarks = remarks
+		specialDiseases := utils.Decrypt(member.SpecialDiseases, encryptionKey)
+		teamMembers[i].SpecialDiseases = specialDiseases
+		allergies := utils.Decrypt(member.Allergies, encryptionKey)
+		teamMembers[i].Allergies = allergies
+	}
+
+	for i, person := range accompanyingPersons {
+		phone := utils.Decrypt(person.Phone, encryptionKey)
+		accompanyingPersons[i].Phone = phone
+	}
+
 	// 返回完整的團隊信息
 	teamData := fiber.Map{
 		"id":                  team.ID,
@@ -451,7 +525,7 @@ func GetFormInformation(c *fiber.Ctx) error {
 
 func UpdateTeamInformation(c *fiber.Ctx) error {
 	validate := validator.New()
-
+	encryptionKey := os.Getenv("ENCRYPTION_KEY")
 	// 從 URL 中獲取 secret
 	secret := c.Params("secret")
 
@@ -518,6 +592,38 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 		}
 		member.UpdatedAt = time.Now()
 
+		for j := range member.EmergencyContacts {
+			encryptedPhone := utils.EncryptAES(formData.TeamMembers[i].EmergencyContacts[j].Phone, encryptionKey)
+			formData.TeamMembers[i].EmergencyContacts[j].Phone = encryptedPhone
+			encryptedRelationship := utils.EncryptAES(formData.TeamMembers[i].EmergencyContacts[j].Relationship, encryptionKey)
+			formData.TeamMembers[i].EmergencyContacts[j].Relationship = encryptedRelationship
+			encryptedName := utils.EncryptAES(formData.TeamMembers[i].EmergencyContacts[j].Name, encryptionKey)
+			formData.TeamMembers[i].EmergencyContacts[j].Name = encryptedName
+		}
+		encryptedStudentCardFront := utils.EncryptAES(formData.TeamMembers[i].StudentCardFront, encryptionKey)
+		formData.TeamMembers[i].StudentCardFront = encryptedStudentCardFront
+			
+		encryptedStudentCardBack := utils.EncryptAES(formData.TeamMembers[i].StudentCardBack, encryptionKey)
+		formData.TeamMembers[i].StudentCardBack = encryptedStudentCardBack
+
+		phone := utils.EncryptAES(formData.TeamMembers[i].Phone, encryptionKey)
+		formData.TeamMembers[i].Phone = phone
+		birthday := utils.EncryptAES(formData.TeamMembers[i].Birthday, encryptionKey)
+		formData.TeamMembers[i].Birthday = birthday
+		identityNumber := utils.EncryptAES(formData.TeamMembers[i].IdentityNumber, encryptionKey)
+		formData.TeamMembers[i].IdentityNumber = identityNumber
+
+		school := utils.EncryptAES(formData.TeamMembers[i].School, encryptionKey)
+		formData.TeamMembers[i].School = school
+		name := utils.EncryptAES(formData.TeamMembers[i].Name, encryptionKey)
+		formData.TeamMembers[i].Name = name
+		remarks := utils.EncryptAES(formData.TeamMembers[i].Remarks, encryptionKey)
+		formData.TeamMembers[i].Remarks = remarks
+		specialDiseases := utils.EncryptAES(formData.TeamMembers[i].SpecialDiseases, encryptionKey)
+		formData.TeamMembers[i].SpecialDiseases = specialDiseases
+		allergies := utils.EncryptAES(formData.TeamMembers[i].Allergies, encryptionKey)
+		formData.TeamMembers[i].Allergies = allergies
+	
 		// 檢查 Email 是否更改
 		if member.Email != "" && member.Email != formData.TeamMembers[i].Email {
 			randomStr, err := utils.GenerateRandomString(128)
@@ -544,6 +650,7 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 			verificationURL := fmt.Sprintf("%s%s", baseURL, randomStr)
 
 			// 更新用戶資料
+			username := formData.TeamMembers[i].Name
 			_, err = database.Db.Collection("users").UpdateOne(c.Context(), bson.M{"id": memberID}, bson.M{"$set": formData.TeamMembers[i]})
 			if err != nil {
 				fmt.Println(err.Error())
@@ -562,8 +669,8 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 				Name             string
 				VerificationLink string
 			}
-
-			if err := t.Execute(&body, EmailData{Name: member.Name, VerificationLink: verificationURL}); err != nil {
+			
+			if err := t.Execute(&body, EmailData{Name: username, VerificationLink: verificationURL}); err != nil {
 				fmt.Println(err.Error())
 				return utils.ResponseMsg(c, 500, "Failed to execute email template", err.Error())
 			}
@@ -592,6 +699,8 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 		if person.ID == "" {
 			person.ID = uuid.New().String() // 如果 ID 為空，創建新 UUID
 		}
+		phone := utils.EncryptAES(person.Phone, encryptionKey)
+		person.Phone = phone
 		_, err := database.Db.Collection("accompanying_persons").UpdateOne(
 			c.Context(),
 			bson.M{"id": person.ID},          // 根據 ID 查找
@@ -608,7 +717,6 @@ func UpdateTeamInformation(c *fiber.Ctx) error {
 	teamData.Exhibitors = []string{}
 	// 更新參展人
 	for _, exhibitor := range formData.Exhibitors {
-		fmt.Println(exhibitor)
 		if exhibitor.ID == "" {
 			exhibitor.ID = uuid.New().String() // 如果 ID 為空，創建新 UUID
 		}
